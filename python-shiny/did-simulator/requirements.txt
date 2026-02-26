@@ -1,0 +1,6 @@
+shiny>=0.6.0
+numpy
+scipy
+matplotlib
+pandas
+statsmodels
