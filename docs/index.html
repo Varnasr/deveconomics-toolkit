@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevEconomics Toolkit — Interactive Tools for Development Economics</title>
+  <meta name="description" content="11 open-source interactive Shiny apps for development economics: impact evaluation, poverty analysis, program design, and data exploration.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e17;
+      --bg-card: #111827;
+      --bg-card-hover: #1a2332;
+      --bg-code: #0d1117;
+      --border: #1e293b;
+      --border-hover: #334155;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #3b82f6;
+      --accent-light: #60a5fa;
+      --accent-glow: rgba(59, 130, 246, 0.15);
+      --green: #10b981;
+      --green-dim: rgba(16, 185, 129, 0.12);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245, 158, 11, 0.12);
+      --purple: #a78bfa;
+      --purple-dim: rgba(167, 139, 250, 0.12);
+      --rose: #f472b6;
+      --rose-dim: rgba(244, 114, 182, 0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- SCROLLBAR ---- */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+
+    /* ---- LAYOUT ---- */
+    .container { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+    /* ---- HERO ---- */
+    .hero {
+      position: relative;
+      padding: 100px 0 80px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 800px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      letter-spacing: 0.02em;
+    }
+    .hero-badge .dot {
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+    .hero h1 span { color: var(--accent-light); }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto 36px;
+      line-height: 1.8;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+    .btn svg { width: 18px; height: 18px; }
+
+    /* ---- STATS BAR ---- */
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 80px;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+
+    /* ---- SECTIONS ---- */
+    section { padding: 40px 0; }
+    .section-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .section-header h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+
+    /* ---- CATEGORY LABEL ---- */
+    .category-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+    .cat-python { color: var(--accent-light); background: var(--accent-glow); }
+    .cat-r { color: var(--green); background: var(--green-dim); }
+
+    /* ---- APP CARDS ---- */
+    .app-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+      margin-bottom: 64px;
+    }
+    .app-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: all 0.25s;
+      position: relative;
+    }
+    .app-card:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+    .app-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+    .app-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+    .app-card .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .tag {
+      font-size: 0.72rem;
+      padding: 3px 9px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+
+    /* ---- CATEGORY SECTIONS ---- */
+    .category-section {
+      margin-bottom: 64px;
+    }
+    .category-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .category-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+    .cat-icon-blue { background: var(--accent-glow); }
+    .cat-icon-green { background: var(--green-dim); }
+    .cat-icon-amber { background: var(--amber-dim); }
+    .cat-icon-purple { background: var(--purple-dim); }
+    .category-title h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .category-title span.count {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+
+    /* ---- GETTING STARTED ---- */
+    .setup-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+      gap: 24px;
+    }
+    @media (max-width: 560px) {
+      .setup-grid { grid-template-columns: 1fr; }
+    }
+    .setup-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+    }
+    .setup-card h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .setup-card h3 .num {
+      width: 28px; height: 28px;
+      background: var(--accent-glow);
+      color: var(--accent-light);
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .setup-card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 18px;
+    }
+
+    /* ---- CODE BLOCKS ---- */
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px 20px;
+      overflow-x: auto;
+      margin: 12px 0;
+      position: relative;
+    }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+    }
+    pre code .comment { color: var(--text-dim); }
+    pre code .cmd { color: var(--green); }
+    pre code .flag { color: var(--amber); }
+    pre code .string { color: var(--accent-light); }
+
+    /* ---- DETAILS / APP DOCS ---- */
+    .app-docs {
+      margin-top: 80px;
+    }
+    .app-doc {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .app-doc summary {
+      padding: 22px 28px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-weight: 600;
+      font-size: 1rem;
+      list-style: none;
+      transition: background 0.2s;
+    }
+    .app-doc summary::-webkit-details-marker { display: none; }
+    .app-doc summary::before {
+      content: '▸';
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .app-doc[open] summary::before { transform: rotate(90deg); }
+    .app-doc summary:hover { background: var(--bg-card-hover); }
+    .app-doc .doc-body {
+      padding: 0 28px 28px;
+      border-top: 1px solid var(--border);
+    }
+    .app-doc .doc-body h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin: 20px 0 8px;
+      color: var(--text);
+    }
+    .app-doc .doc-body p,
+    .app-doc .doc-body li {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.75;
+    }
+    .app-doc .doc-body ul {
+      padding-left: 20px;
+      margin: 8px 0;
+    }
+    .app-doc .doc-body li { margin-bottom: 4px; }
+    .app-doc .badge-row {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    /* ---- DEPLOY TABLE ---- */
+    .deploy-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 24px 0;
+    }
+    .deploy-table th,
+    .deploy-table td {
+      text-align: left;
+      padding: 14px 18px;
+      font-size: 0.88rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .deploy-table th {
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+    }
+    .deploy-table td { color: var(--text-muted); }
+    .deploy-table code {
+      background: var(--bg-code);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+    }
+
+    /* ---- REFERENCES ---- */
+    .ref-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 560px) {
+      .ref-list { grid-template-columns: 1fr; }
+    }
+    .ref-item {
+      display: flex;
+      gap: 14px;
+      padding: 16px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .ref-year {
+      color: var(--text-dim);
+      font-weight: 600;
+      font-size: 0.78rem;
+      flex-shrink: 0;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ---- FOOTER ---- */
+    footer {
+      margin-top: 80px;
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+    footer a { color: var(--accent-light); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    footer p { margin: 6px 0; }
+
+    /* ---- NAV ---- */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10, 14, 23, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    nav .nav-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+    nav .logo {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    nav .logo span { color: var(--accent-light); }
+    nav .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+    nav .nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav .nav-links a:hover { color: var(--text); }
+    @media (max-width: 640px) {
+      nav .nav-links { display: none; }
+      .hero { padding: 60px 0 50px; }
+      .stats { gap: 24px; }
+      .app-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ---- SMOOTH SCROLL ---- */
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">dev<span>economics</span> toolkit</a>
+    <ul class="nav-links">
+      <li><a href="#apps">Apps</a></li>
+      <li><a href="#getting-started">Get Started</a></li>
+      <li><a href="#documentation">Docs</a></li>
+      <li><a href="#deploy">Deploy</a></li>
+      <li><a href="#references">References</a></li>
+      <li><a href="https://github.com/Varnasr/deveconomics-toolkit" target="_blank">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-badge"><span class="dot"></span> Open Source &middot; MIT License</div>
+    <h1>Interactive tools for<br><span>development economics</span></h1>
+    <p>
+      A suite of 11 open-source Shiny apps for impact evaluation, poverty analysis,
+      program design, and data exploration. Built for researchers, practitioners,
+      and students working in global development.
+    </p>
+    <div class="hero-actions">
+      <a href="https://github.com/Varnasr/deveconomics-toolkit" class="btn btn-primary" target="_blank">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+      <a href="#getting-started" class="btn btn-secondary">
+        Get Started
+      </a>
+      <a href="https://impactmojo.com" class="btn btn-secondary" target="_blank">
+        Impact Mojo
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- STATS -->
+<div class="container">
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-value">11</div>
+      <div class="stat-label">Interactive Apps</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">6</div>
+      <div class="stat-label">Python Shiny</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">5</div>
+      <div class="stat-label">R Shiny</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">4</div>
+      <div class="stat-label">Categories</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">MIT</div>
+      <div class="stat-label">License</div>
+    </div>
+  </div>
+</div>
+
+<!-- APPS OVERVIEW -->
+<section id="apps">
+  <div class="container">
+    <div class="section-header">
+      <h2>The Apps</h2>
+      <p>Organized into four categories spanning the full lifecycle of development economics work.</p>
+    </div>
+
+    <!-- Impact Evaluation -->
+    <div class="category-section">
+      <div class="category-title">
+        <div class="category-icon cat-icon-blue">&#x1F3AF;</div>
+        <div>
+          <h3>Impact Evaluation &amp; Econometrics</h3>
+          <span class="count">4 apps &middot; Design and analyze causal studies</span>
+        </div>
+      </div>
+      <div class="app-grid">
+        <div class="app-card">
+          <div class="category-label cat-python">Python Shiny</div>
+          <h3>RCT Power Calculator</h3>
+          <p>Compute sample size, statistical power, and minimum detectable effect size for randomized controlled trials. Supports cluster randomization and multiple treatment arms with ICC adjustment.</p>
+          <div class="features">
+            <span class="tag">Sample size</span>
+            <span class="tag">Power curves</span>
+            <span class="tag">MDE</span>
+            <span class="tag">Cluster RCT</span>
+            <span class="tag">ICC</span>
+          </div>
+        </div>
+        <div class="app-card">
+          <div class="category-label cat-python">Python Shiny</div>
+          <h3>DiD Simulator</h3>
+          <p>Simulate difference-in-differences designs with OLS output, event-study coefficient plots, and automatic parallel trends violation detection. Adjust treatment timing, effect sizes, and group structures.</p>
+          <div class="features">
+            <span class="tag">Parallel trends</span>
+            <span class="tag">Event study</span>
+            <span class="tag">OLS regression</span>
+            <span class="tag">Visualization</span>
+          </div>
+        </div>
+        <div class="app-card">
+          <div class="category-label cat-r">R Shiny</div>
+          <h3>RDD Explorer</h3>
+          <p>Explore sharp and fuzzy regression discontinuity designs with local polynomial estimation, McCrary manipulation testing, and bandwidth sensitivity analysis. Upload your own data or use built-in examples.</p>
+          <div class="features">
+            <span class="tag">Sharp RDD</span>
+            <span class="tag">Fuzzy RDD</span>
+            <span class="tag">McCrary test</span>
+            <span class="tag">Bandwidth</span>
+          </div>
+        </div>
+        <div class="app-card">
+          <div class="category-label cat-python">Python Shiny</div>
+          <h3>Synthetic Control Visualizer</h3>
+          <p>Visualize the synthetic control method with constrained optimization, in-space and in-time placebo tests, gap plots, and pre-treatment fit diagnostics for comparative case studies.</p>
+          <div class="features">
+            <span class="tag">SCM</span>
+            <span class="tag">Placebo tests</span>
+            <span class="tag">Gap plots</span>
+            <span class="tag">Donor weights</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Poverty & Inequality -->
+    <div class="category-section">
+      <div class="category-title">
+        <div class="category-icon cat-icon-green">&#x1F4CA;</div>
+        <div>
+          <h3>Poverty &amp; Inequality</h3>
+          <span class="count">3 apps &middot; Measure and decompose welfare outcomes</span>
+        </div>
+      </div>
+      <div class="app-grid">
+        <div class="app-card">
+          <div class="category-label cat-r">R Shiny</div>
+          <h3>Gini &amp; Lorenz Curve Tool</h3>
+          <p>Calculate the Gini coefficient, Theil index, and Palma ratio from generated or uploaded distributions. Compare distributions side by side with interactive Lorenz curves and inequality decomposition.</p>
+          <div class="features">
+            <span class="tag">Gini</span>
+            <span class="tag">Theil</span>
+            <span class="tag">Palma ratio</span>
+            <span class="tag">Lorenz curve</span>
+          </div>
+        </div>
+        <div class="app-card">
+          <div class="category-label cat-python">Python Shiny</div>
+          <h3>MPI Explorer</h3>
+          <p>Explore the Multidimensional Poverty Index using the Alkire-Foster method. Radar charts, decomposition by dimension and indicator, and sensitivity analysis to the poverty cutoff (k).</p>
+          <div class="features">
+            <span class="tag">Alkire-Foster</span>
+            <span class="tag">MPI</span>
+            <span class="tag">Radar charts</span>
+            <span class="tag">Cutoff sensitivity</span>
+          </div>
+        </div>
+        <div class="app-card">
+          <div class="category-label cat-r">R Shiny</div>
+          <h3>Poverty Line Analysis</h3>
+          <p>Compute FGT(0), FGT(1), FGT(2) and Watts indices against World Bank international poverty lines ($2.15, $3.65, $6.85 PPP). Simulate pro-poor growth and redistribution scenarios.</p>
+          <div class="features">
+            <span class="tag">FGT indices</span>
+            <span class="tag">Poverty lines</span>
+            <span class="tag">Watts index</span>
+            <span class="tag">Simulations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Program Design -->
+    <div class="category-section">
+      <div class="category-title">
+        <div class="category-icon cat-icon-amber">&#x1F4CB;</div>
+        <div>
+          <h3>Program Design &amp; Management</h3>
+          <span class="count">3 apps &middot; Plan, cost, and track development programs</span>
+        </div>
+      </div>
+      <div class="app-grid">
+        <div class="app-card">
+          <div class="category-label cat-python">Python Shiny</div>
+          <h3>Theory of Change Visualizer</h3>
+          <p>Build interactive ToC diagrams with sector templates for Education, Health, Livelihoods, and WASH. Auto-generates narrative descriptions and exportable summaries for proposals and reports.</p>
+          <div class="features">
+            <span class="tag">ToC diagrams</span>
+            <span class="tag">Sector templates</span>
+            <span class="tag">Narrative export</span>
+            <span class="tag">Interactive</span>
+          </div>
+        </div>
+        <div class="app-card">
+          <div class="category-label cat-python">Python Shiny</div>
+          <h3>Cost-Benefit Analysis Tool</h3>
+          <p>Calculate NPV, BCR, and IRR with tornado diagrams and Monte Carlo simulation. Includes a cost-effectiveness tab benchmarked against GiveWell thresholds for charitable interventions.</p>
+          <div class="features">
+            <span class="tag">NPV / BCR / IRR</span>
+            <span class="tag">Monte Carlo</span>
+            <span class="tag">Tornado</span>
+            <span class="tag">GiveWell CEA</span>
+          </div>
+        </div>
+        <div class="app-card">
+          <div class="category-label cat-r">R Shiny</div>
+          <h3>LogFrame Builder</h3>
+          <p>Build logical frameworks with editable matrices, indicator tracking with progress bars, results chain visualization, and HTML/CSV export. Includes 6 sector templates aligned with donor standards.</p>
+          <div class="features">
+            <span class="tag">LogFrame matrix</span>
+            <span class="tag">Indicator tracking</span>
+            <span class="tag">Results chain</span>
+            <span class="tag">Export</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Exploration -->
+    <div class="category-section">
+      <div class="category-title">
+        <div class="category-icon cat-icon-purple">&#x1F30D;</div>
+        <div>
+          <h3>Data Exploration</h3>
+          <span class="count">1 app &middot; Explore global development data</span>
+        </div>
+      </div>
+      <div class="app-grid">
+        <div class="app-card">
+          <div class="category-label cat-r">R Shiny</div>
+          <h3>WDI Dashboard</h3>
+          <p>Explore 15 key development indicators across 50 countries and 6 regions using World Bank WDI data. Time series, cross-country scatter plots, regional comparisons, and downloadable data tables.</p>
+          <div class="features">
+            <span class="tag">World Bank WDI</span>
+            <span class="tag">Time series</span>
+            <span class="tag">Cross-country</span>
+            <span class="tag">Data download</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GETTING STARTED -->
+<section id="getting-started">
+  <div class="container">
+    <div class="section-header">
+      <h2>Getting Started</h2>
+      <p>Clone the repo and run any app locally in under two minutes. No API keys or external datasets required.</p>
+    </div>
+
+    <div class="setup-grid">
+      <!-- Python -->
+      <div class="setup-card">
+        <h3><span class="num">1</span> Python Shiny Apps</h3>
+        <p>6 apps built with Python Shiny. Each has its own <code>requirements.txt</code>.</p>
+        <pre><code><span class="comment"># Clone the repository</span>
+<span class="cmd">git clone</span> https://github.com/Varnasr/deveconomics-toolkit.git
+<span class="cmd">cd</span> deveconomics-toolkit
+
+<span class="comment"># Pick any Python app</span>
+<span class="cmd">cd</span> python-shiny/rct-power-calculator
+
+<span class="comment"># Create a virtual environment (recommended)</span>
+<span class="cmd">python</span> <span class="flag">-m</span> venv .venv
+<span class="cmd">source</span> .venv/bin/activate
+
+<span class="comment"># Install dependencies and run</span>
+<span class="cmd">pip install</span> <span class="flag">-r</span> requirements.txt
+<span class="cmd">shiny run</span> app.py</code></pre>
+        <p style="margin-top: 12px; font-size: 0.85rem;">Opens at <code>http://127.0.0.1:8000</code></p>
+      </div>
+
+      <!-- R -->
+      <div class="setup-card">
+        <h3><span class="num">2</span> R Shiny Apps</h3>
+        <p>5 apps built with R Shiny. Standard CRAN packages.</p>
+        <pre><code><span class="comment"># Install R dependencies (once)</span>
+<span class="cmd">install.packages</span>(c(
+  <span class="string">"shiny"</span>, <span class="string">"ggplot2"</span>, <span class="string">"dplyr"</span>,
+  <span class="string">"tidyr"</span>, <span class="string">"DT"</span>
+))
+
+<span class="comment"># Run any R app</span>
+<span class="cmd">shiny::runApp</span>(<span class="string">"r-shiny/rdd-explorer"</span>)</code></pre>
+        <p style="margin-top:16px;">Or from the terminal:</p>
+        <pre><code><span class="cmd">cd</span> r-shiny/rdd-explorer
+<span class="cmd">Rscript</span> <span class="flag">-e</span> <span class="string">"shiny::runApp('.')"</span></code></pre>
+        <p style="margin-top: 12px; font-size: 0.85rem;">Opens at <code>http://127.0.0.1:3838</code> (or the port R assigns)</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DETAILED DOCUMENTATION -->
+<section id="documentation" class="app-docs">
+  <div class="container">
+    <div class="section-header">
+      <h2>Detailed Documentation</h2>
+      <p>Expand any app below for full usage instructions, inputs, outputs, and methodological notes.</p>
+    </div>
+
+    <!-- RCT Power Calculator -->
+    <details class="app-doc">
+      <summary>
+        RCT Power Calculator
+        <div class="badge-row">
+          <span class="category-label cat-python" style="margin:0">Python</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Computes the required sample size, statistical power, or minimum detectable effect (MDE) for two-arm and multi-arm randomized controlled trials — the workhorse design in development economics.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Solve for:</strong> Choose between Sample Size, Power, or MDE</li>
+          <li><strong>Significance level (&#x03B1;):</strong> Type I error rate (default 0.05)</li>
+          <li><strong>Power (1-&#x03B2;):</strong> Probability of detecting a true effect (default 0.80)</li>
+          <li><strong>Effect size (Cohen's d):</strong> Standardized effect size</li>
+          <li><strong>Number of treatment arms:</strong> 1 to 5 arms with Bonferroni correction</li>
+          <li><strong>Cluster randomization:</strong> Toggle cluster-level assignment with cluster size and ICC</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>Calculated result (sample size, power, or MDE) with formula shown</li>
+          <li>Power curve plot across a range of sample sizes</li>
+          <li>Design effect calculation for cluster RCTs</li>
+        </ul>
+        <h4>Methods</h4>
+        <p>Uses the standard normal approximation for power analysis. For cluster RCTs, applies the design effect formula: DE = 1 + (m - 1) &times; ICC, where m is the cluster size. Multi-arm trials apply a Bonferroni correction to the significance level.</p>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">cd</span> python-shiny/rct-power-calculator
+<span class="cmd">pip install</span> <span class="flag">-r</span> requirements.txt && <span class="cmd">shiny run</span> app.py</code></pre>
+      </div>
+    </details>
+
+    <!-- DiD Simulator -->
+    <details class="app-doc">
+      <summary>
+        Difference-in-Differences Simulator
+        <div class="badge-row">
+          <span class="category-label cat-python" style="margin:0">Python</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Generates synthetic panel data and estimates difference-in-differences models with full regression output. Designed to help students and practitioners build intuition for the assumptions behind DiD.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Number of units:</strong> Total units in the panel (treatment + control)</li>
+          <li><strong>Time periods:</strong> Number of pre- and post-treatment periods</li>
+          <li><strong>Treatment effect:</strong> True ATT injected into the data</li>
+          <li><strong>Treatment timing:</strong> Period when treatment begins</li>
+          <li><strong>Parallel trends violation:</strong> Slider to introduce differential pre-trends</li>
+          <li><strong>Noise level:</strong> Standard deviation of the error term</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>Raw data panel plot (treatment vs. control over time)</li>
+          <li>OLS regression table with coefficient estimates, SEs, and p-values</li>
+          <li>Event-study plot with dynamic treatment effects and confidence intervals</li>
+          <li>Parallel trends diagnostic</li>
+        </ul>
+        <h4>Methods</h4>
+        <p>Implements the canonical two-way fixed effects estimator: Y = &#x03B1; + &#x03B2;&#x2081;Treat + &#x03B2;&#x2082;Post + &#x03B4;(Treat &times; Post) + &#x03B5;. The event-study specification replaces the single post indicator with period-specific dummies.</p>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">cd</span> python-shiny/did-simulator
+<span class="cmd">pip install</span> <span class="flag">-r</span> requirements.txt && <span class="cmd">shiny run</span> app.py</code></pre>
+      </div>
+    </details>
+
+    <!-- RDD Explorer -->
+    <details class="app-doc">
+      <summary>
+        Regression Discontinuity Explorer
+        <div class="badge-row">
+          <span class="category-label cat-r" style="margin:0">R</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Interactive tool for exploring sharp and fuzzy RD designs. Visualize the discontinuity, test for manipulation, and assess sensitivity to bandwidth and polynomial order.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Design type:</strong> Sharp or Fuzzy RDD</li>
+          <li><strong>Sample size:</strong> Number of observations</li>
+          <li><strong>Treatment effect:</strong> True discontinuity jump</li>
+          <li><strong>Cutoff:</strong> Running variable threshold</li>
+          <li><strong>Bandwidth:</strong> Window around the cutoff for local estimation</li>
+          <li><strong>Polynomial order:</strong> Degree of the local polynomial (1 or 2)</li>
+          <li><strong>Compliance rate (fuzzy):</strong> Fraction of units that comply with assignment</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>Scatter plot with fitted lines on both sides of the cutoff</li>
+          <li>Local polynomial regression estimates</li>
+          <li>McCrary density test for manipulation of the running variable</li>
+          <li>Bandwidth sensitivity plot showing how estimates vary</li>
+        </ul>
+        <h4>Methods</h4>
+        <p>Sharp RDD estimates the LATE at the cutoff using local polynomial regression. Fuzzy RDD instruments actual treatment with the assignment indicator (2SLS). McCrary test checks for bunching at the cutoff.</p>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">Rscript</span> <span class="flag">-e</span> <span class="string">"shiny::runApp('r-shiny/rdd-explorer')"</span></code></pre>
+      </div>
+    </details>
+
+    <!-- Synthetic Control -->
+    <details class="app-doc">
+      <summary>
+        Synthetic Control Visualizer
+        <div class="badge-row">
+          <span class="category-label cat-python" style="margin:0">Python</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Implements the synthetic control method for comparative case studies where a single unit receives treatment. Constructs a weighted combination of donor units that approximates the treated unit's pre-treatment trajectory.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Number of donor units:</strong> Size of the donor pool</li>
+          <li><strong>Time periods:</strong> Pre- and post-treatment periods</li>
+          <li><strong>Treatment effect:</strong> True effect injected post-treatment</li>
+          <li><strong>Treatment timing:</strong> Period when intervention begins</li>
+          <li><strong>Noise level:</strong> Idiosyncratic variation in unit outcomes</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>Treated unit vs. synthetic control time series</li>
+          <li>Gap plot (difference between treated and synthetic)</li>
+          <li>Donor unit weights table</li>
+          <li>In-space placebo tests (reassign treatment to each donor)</li>
+          <li>Pre-treatment RMSPE fit diagnostic</li>
+        </ul>
+        <h4>Methods</h4>
+        <p>Solves a constrained optimization problem to find non-negative donor weights that minimize pre-treatment RMSPE. Placebo tests assess whether the estimated gap is unusually large relative to placebo gaps. Based on Abadie, Diamond &amp; Hainmueller (2010).</p>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">cd</span> python-shiny/synthetic-control
+<span class="cmd">pip install</span> <span class="flag">-r</span> requirements.txt && <span class="cmd">shiny run</span> app.py</code></pre>
+      </div>
+    </details>
+
+    <!-- Gini & Lorenz -->
+    <details class="app-doc">
+      <summary>
+        Gini &amp; Lorenz Curve Tool
+        <div class="badge-row">
+          <span class="category-label cat-r" style="margin:0">R</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Calculate and visualize inequality measures from income or expenditure distributions. Compare two distributions side by side to see how policy interventions or structural changes affect inequality.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Distribution type:</strong> Log-normal, Pareto, or custom data upload</li>
+          <li><strong>Parameters:</strong> Mean, standard deviation (log-normal) or shape parameter (Pareto)</li>
+          <li><strong>Sample size:</strong> Number of observations to generate</li>
+          <li><strong>Comparison mode:</strong> Toggle a second distribution for side-by-side analysis</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>Interactive Lorenz curve with 45-degree equality line</li>
+          <li>Gini coefficient, Theil index (GE(1)), Palma ratio (top 10% / bottom 40%)</li>
+          <li>Income share by quintile table</li>
+          <li>Kernel density plot of the distribution</li>
+        </ul>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">Rscript</span> <span class="flag">-e</span> <span class="string">"shiny::runApp('r-shiny/gini-lorenz')"</span></code></pre>
+      </div>
+    </details>
+
+    <!-- MPI Explorer -->
+    <details class="app-doc">
+      <summary>
+        Multidimensional Poverty Index Explorer
+        <div class="badge-row">
+          <span class="category-label cat-python" style="margin:0">Python</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Explore multidimensional poverty using the Alkire-Foster counting approach. Understand how the choice of dimensions, indicators, weights, and the poverty cutoff (k) affect who is identified as poor.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Dimensions &amp; indicators:</strong> Health, Education, Living Standards with sub-indicators</li>
+          <li><strong>Weights:</strong> Adjustable weights for each indicator (equal or custom)</li>
+          <li><strong>Poverty cutoff (k):</strong> Fraction of weighted deprivations needed to be MPI-poor (default 1/3)</li>
+          <li><strong>Population size:</strong> Number of synthetic households</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>MPI value (H &times; A: headcount ratio &times; average intensity)</li>
+          <li>Radar chart showing deprivation rates by indicator</li>
+          <li>Dimensional decomposition bar chart</li>
+          <li>Sensitivity plot: MPI as a function of the cutoff k</li>
+        </ul>
+        <h4>Methods</h4>
+        <p>Implements Alkire &amp; Foster (2011). Each household is assigned a deprivation score across weighted indicators. Those whose score exceeds k are identified as multidimensionally poor. The MPI decomposes into incidence (H) and intensity (A).</p>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">cd</span> python-shiny/mpi-explorer
+<span class="cmd">pip install</span> <span class="flag">-r</span> requirements.txt && <span class="cmd">shiny run</span> app.py</code></pre>
+      </div>
+    </details>
+
+    <!-- Poverty Line Analysis -->
+    <details class="app-doc">
+      <summary>
+        Poverty Line Analysis
+        <div class="badge-row">
+          <span class="category-label cat-r" style="margin:0">R</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Analyze poverty using the Foster-Greer-Thorbecke family of indices against international and custom poverty lines. Simulate how economic growth and redistribution affect poverty outcomes.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Poverty line:</strong> $2.15, $3.65, $6.85 (2017 PPP) or custom value</li>
+          <li><strong>Distribution:</strong> Log-normal income with adjustable mean and inequality</li>
+          <li><strong>Growth scenario:</strong> Uniform growth rate applied to all incomes</li>
+          <li><strong>Redistribution scenario:</strong> Transfer from top to bottom quintile</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>FGT(0): Headcount ratio — share of population below the poverty line</li>
+          <li>FGT(1): Poverty gap — average distance below the line</li>
+          <li>FGT(2): Squared poverty gap — severity-weighted measure</li>
+          <li>Watts index: Log-based measure sensitive to the poorest</li>
+          <li>Before/after comparison under growth and redistribution</li>
+        </ul>
+        <h4>Methods</h4>
+        <p>Implements Foster, Greer &amp; Thorbecke (1984): FGT(&#x03B1;) = (1/n) &#x2211; [(z - y&#x1D62;)/z]&#x1D45E; for y&#x1D62; &lt; z. Higher &#x03B1; gives more weight to the poorest. The Watts index uses the log ratio: W = (1/n) &#x2211; ln(z/y&#x1D62;).</p>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">Rscript</span> <span class="flag">-e</span> <span class="string">"shiny::runApp('r-shiny/poverty-line-analysis')"</span></code></pre>
+      </div>
+    </details>
+
+    <!-- Theory of Change -->
+    <details class="app-doc">
+      <summary>
+        Theory of Change Visualizer
+        <div class="badge-row">
+          <span class="category-label cat-python" style="margin:0">Python</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Build interactive Theory of Change diagrams for development programs. Start from sector-specific templates or build from scratch. Generates visual diagrams and narrative summaries ready for donor proposals.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Sector template:</strong> Education, Health, Livelihoods, WASH, or blank</li>
+          <li><strong>Components:</strong> Inputs, Activities, Outputs, Outcomes, Impact (editable at each level)</li>
+          <li><strong>Assumptions:</strong> Add assumptions and risks at each causal link</li>
+          <li><strong>Indicators:</strong> Attach measurable indicators to outputs and outcomes</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>Visual ToC diagram with color-coded levels and connecting arrows</li>
+          <li>Auto-generated narrative description</li>
+          <li>Exportable summary for reports and proposals</li>
+        </ul>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">cd</span> python-shiny/theory-of-change
+<span class="cmd">pip install</span> <span class="flag">-r</span> requirements.txt && <span class="cmd">shiny run</span> app.py</code></pre>
+      </div>
+    </details>
+
+    <!-- CBA Tool -->
+    <details class="app-doc">
+      <summary>
+        Cost-Benefit Analysis Tool
+        <div class="badge-row">
+          <span class="category-label cat-python" style="margin:0">Python</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>A comprehensive CBA/CEA calculator for development projects. Computes standard investment metrics, runs sensitivity analysis, and benchmarks cost-effectiveness against GiveWell thresholds.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Project horizon:</strong> Number of years (1-30)</li>
+          <li><strong>Discount rate:</strong> Social discount rate for present value calculations</li>
+          <li><strong>Costs:</strong> Year-by-year cost streams (initial + recurring)</li>
+          <li><strong>Benefits:</strong> Year-by-year monetized benefit streams</li>
+          <li><strong>Monte Carlo parameters:</strong> Distribution assumptions for uncertainty analysis</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>Net Present Value (NPV), Benefit-Cost Ratio (BCR), Internal Rate of Return (IRR)</li>
+          <li>Cumulative NPV chart over the project horizon</li>
+          <li>Tornado diagram showing sensitivity to each input parameter</li>
+          <li>Monte Carlo histogram of NPV distribution with confidence intervals</li>
+          <li>Cost-effectiveness ratio benchmarked against GiveWell's $50-$150/DALY thresholds</li>
+        </ul>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">cd</span> python-shiny/cost-benefit-analysis
+<span class="cmd">pip install</span> <span class="flag">-r</span> requirements.txt && <span class="cmd">shiny run</span> app.py</code></pre>
+      </div>
+    </details>
+
+    <!-- LogFrame Builder -->
+    <details class="app-doc">
+      <summary>
+        LogFrame Builder
+        <div class="badge-row">
+          <span class="category-label cat-r" style="margin:0">R</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Build and manage logical frameworks for development projects with editable matrices, progress tracking, and sector-specific templates aligned with major donor requirements.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Template:</strong> Choose from 6 sector templates or start blank</li>
+          <li><strong>Hierarchy levels:</strong> Goal, Purpose, Outputs, Activities</li>
+          <li><strong>Indicators:</strong> OVI (Objectively Verifiable Indicators) with baselines and targets</li>
+          <li><strong>Means of verification:</strong> Data sources for each indicator</li>
+          <li><strong>Assumptions:</strong> Risks and conditions at each level</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>Standard 4&times;4 LogFrame matrix (interactive, editable)</li>
+          <li>Indicator tracking dashboard with progress bars</li>
+          <li>Results chain visualization (vertical flow diagram)</li>
+          <li>Export to HTML and CSV</li>
+        </ul>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">Rscript</span> <span class="flag">-e</span> <span class="string">"shiny::runApp('r-shiny/logframe-builder')"</span></code></pre>
+      </div>
+    </details>
+
+    <!-- WDI Dashboard -->
+    <details class="app-doc">
+      <summary>
+        World Development Indicators Dashboard
+        <div class="badge-row">
+          <span class="category-label cat-r" style="margin:0">R</span>
+        </div>
+      </summary>
+      <div class="doc-body">
+        <h4>Overview</h4>
+        <p>Explore World Bank development data with interactive visualizations. Compare countries and regions across key indicators spanning economic growth, health, education, and infrastructure.</p>
+        <h4>Inputs</h4>
+        <ul>
+          <li><strong>Indicator:</strong> Choose from 15 development indicators (GDP per capita, life expectancy, enrollment rates, etc.)</li>
+          <li><strong>Countries:</strong> Select up to 50 countries</li>
+          <li><strong>Regions:</strong> 6 World Bank regions for aggregate comparison</li>
+          <li><strong>Time range:</strong> Adjustable year slider</li>
+        </ul>
+        <h4>Outputs</h4>
+        <ul>
+          <li>Time series line charts for selected countries</li>
+          <li>Cross-country scatter plots (choose X and Y indicators)</li>
+          <li>Regional comparison bar charts</li>
+          <li>Downloadable data tables (CSV)</li>
+        </ul>
+        <h4>Run it</h4>
+        <pre><code><span class="cmd">Rscript</span> <span class="flag">-e</span> <span class="string">"shiny::runApp('r-shiny/wdi-dashboard')"</span></code></pre>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- DEPLOYMENT -->
+<section id="deploy">
+  <div class="container">
+    <div class="section-header">
+      <h2>Deployment</h2>
+      <p>Each app is self-contained and can be deployed independently to any of these platforms.</p>
+    </div>
+    <table class="deploy-table">
+      <thead>
+        <tr>
+          <th>Platform</th>
+          <th>Best For</th>
+          <th>How</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>shinyapps.io</strong></td>
+          <td>R Shiny apps — free tier available</td>
+          <td><code>rsconnect::deployApp("r-shiny/rdd-explorer")</code></td>
+        </tr>
+        <tr>
+          <td><strong>Hugging Face Spaces</strong></td>
+          <td>Python Shiny apps — free CPU instances</td>
+          <td>Create a Space with Docker SDK, copy the app directory</td>
+        </tr>
+        <tr>
+          <td><strong>Shinylive (WASM)</strong></td>
+          <td>Python apps — runs entirely in the browser</td>
+          <td><code>shinylive export app.py site/</code></td>
+        </tr>
+        <tr>
+          <td><strong>Posit Connect</strong></td>
+          <td>Enterprise deployment for R + Python</td>
+          <td>Follow Posit Connect documentation</td>
+        </tr>
+        <tr>
+          <td><strong>Docker</strong></td>
+          <td>Any app — portable containers</td>
+          <td>Dockerfile per app (see repo)</td>
+        </tr>
+        <tr>
+          <td><strong>Your website</strong></td>
+          <td>Embed deployed apps via iframe</td>
+          <td><code>&lt;iframe src="https://app-url" width="100%" height="800"&gt;&lt;/iframe&gt;</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TECH STACK -->
+<section id="tech-stack">
+  <div class="container">
+    <div class="section-header">
+      <h2>Tech Stack</h2>
+      <p>Built on well-supported, production-ready frameworks.</p>
+    </div>
+    <div class="setup-grid">
+      <div class="setup-card">
+        <h3>Python Shiny <span style="color:var(--text-dim);font-weight:400;font-size:0.9rem">&middot; 6 apps</span></h3>
+        <p>Modern reactive web apps in Python, deployable as Shinylive for zero-server client-side execution via WebAssembly.</p>
+        <div class="features" style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span class="tag">shiny &ge; 0.6.0</span>
+          <span class="tag">numpy</span>
+          <span class="tag">scipy</span>
+          <span class="tag">matplotlib</span>
+          <span class="tag">pandas</span>
+          <span class="tag">statsmodels</span>
+        </div>
+      </div>
+      <div class="setup-card">
+        <h3>R Shiny <span style="color:var(--text-dim);font-weight:400;font-size:0.9rem">&middot; 5 apps</span></h3>
+        <p>The original reactive framework for statistical computing, with deep integration into R's visualization and data analysis ecosystem.</p>
+        <div class="features" style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span class="tag">shiny</span>
+          <span class="tag">ggplot2</span>
+          <span class="tag">dplyr</span>
+          <span class="tag">tidyr</span>
+          <span class="tag">DT</span>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--text-dim);font-size:0.88rem;margin-top:24px;">
+      All apps generate synthetic data for demonstration — no external API calls or datasets required.
+    </p>
+  </div>
+</section>
+
+<!-- REFERENCES -->
+<section id="references">
+  <div class="container">
+    <div class="section-header">
+      <h2>Key References</h2>
+      <p>The methods behind these tools come from the development economics canon.</p>
+    </div>
+    <div class="ref-list">
+      <div class="ref-item">
+        <span class="ref-year">2009</span>
+        <span>Angrist, J. &amp; Pischke, J. <em>Mostly Harmless Econometrics.</em> Princeton University Press.</span>
+      </div>
+      <div class="ref-item">
+        <span class="ref-year">2007</span>
+        <span>Duflo, E., Glennerster, R. &amp; Kremer, M. Using Randomization in Development Economics Research. <em>Handbook of Development Economics.</em></span>
+      </div>
+      <div class="ref-item">
+        <span class="ref-year">2010</span>
+        <span>Abadie, A., Diamond, A. &amp; Hainmueller, J. Synthetic Control Methods for Comparative Case Studies. <em>JASA.</em></span>
+      </div>
+      <div class="ref-item">
+        <span class="ref-year">2008</span>
+        <span>Imbens, G. &amp; Lemieux, T. Regression Discontinuity Designs: A Guide to Practice. <em>Journal of Econometrics.</em></span>
+      </div>
+      <div class="ref-item">
+        <span class="ref-year">2011</span>
+        <span>Alkire, S. &amp; Foster, J. Counting and Multidimensional Poverty Measurement. <em>Journal of Public Economics.</em></span>
+      </div>
+      <div class="ref-item">
+        <span class="ref-year">1984</span>
+        <span>Foster, J., Greer, J. &amp; Thorbecke, E. A Class of Decomposable Poverty Measures. <em>Econometrica.</em></span>
+      </div>
+      <div class="ref-item">
+        <span class="ref-year">1994</span>
+        <span>Card, D. &amp; Krueger, A. Minimum Wages and Employment: A Case Study of the Fast-Food Industry. <em>AER.</em></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>
+      <strong>deveconomics-toolkit</strong> &middot; Built for the global development community
+    </p>
+    <p>
+      <a href="https://github.com/Varnasr/deveconomics-toolkit" target="_blank">GitHub Repository</a>
+      &nbsp;&middot;&nbsp;
+      <a href="https://impactmojo.com" target="_blank">Impact Mojo</a>
+      &nbsp;&middot;&nbsp;
+      MIT License
+    </p>
+    <p style="margin-top: 16px; color: var(--text-dim);">
+      &copy; 2026 Impact Mojo. Open source under the MIT License.
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
