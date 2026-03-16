@@ -31,3 +31,12 @@ Thumbs.db
 
 # Shiny
 rsconnect/
+
+# Added by git standards propagation
+# Environment files
+.env
+.env.*
+!.env.example
+node_modules/
+*.log
+coverage/
