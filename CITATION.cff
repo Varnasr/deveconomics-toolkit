@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use the deveconomics-toolkit in your research or teaching, please cite it as below."
+type: software
+title: "deveconomics-toolkit: Interactive Shiny Apps for Development Economics"
+authors:
+  - family-names: Raman
+    given-names: Varna Sri
+url: "https://github.com/Varnasr/deveconomics-toolkit"
+repository-code: "https://github.com/Varnasr/deveconomics-toolkit"
+license: MIT
+keywords:
+  - development-economics
+  - shiny
+  - impact-evaluation
+  - poverty
+  - inequality
+  - interactive-tools
+  - r-shiny
+  - python-shiny
+date-released: "2025-01-01"
