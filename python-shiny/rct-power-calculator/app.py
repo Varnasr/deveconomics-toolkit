@@ -6,7 +6,7 @@ for randomized controlled trials commonly used in development economics.
 
 from shiny import App, reactive, render, ui
 import numpy as np
-from scipy import stats
+import power as pw
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg")
@@ -127,49 +127,45 @@ def server(input, output, session):
     @reactive.calc
     def design_effect():
         if input.clustered():
-            return 1 + (input.cluster_size() - 1) * input.icc()
+            return pw.design_effect(input.cluster_size(), input.icc())
         return 1.0
-
-    @reactive.calc
-    def z_alpha():
-        a = input.alpha()
-        if input.n_arms() > 2:
-            a = a / (input.n_arms() - 1)  # Bonferroni
-        if input.test_type() == "two_sided":
-            return stats.norm.ppf(1 - a / 2)
-        return stats.norm.ppf(1 - a)
 
     @reactive.calc
     def compute_result():
         de = design_effect()
-        za = z_alpha()
         p = input.treat_share()
-        allocation_factor = 1 / (p * (1 - p))  # equals 4 when p=0.5
+        two_sided = input.test_type() == "two_sided"
+        kw = dict(p=p, de=de, two_sided=two_sided, n_arms=input.n_arms())
 
         if input.solve_for() == "sample_size":
-            zb = stats.norm.ppf(input.power())
-            d = input.effect_size()
-            n_per_arm = ((za + zb) ** 2 / d**2) * de
-            n_total = n_per_arm * allocation_factor
+            n_t, n_c = pw.n_per_arm(
+                input.effect_size(), input.alpha(), input.power(), **kw
+            )
             return {
                 "type": "sample_size",
-                "n_per_arm": int(np.ceil(n_per_arm)),
-                "n_total": int(np.ceil(n_total)),
+                "n_treatment": int(np.ceil(n_t)),
+                "n_control": int(np.ceil(n_c)),
+                "n_per_arm": int(np.ceil(max(n_t, n_c))),
+                "n_total": int(np.ceil(n_t + n_c)),
                 "de": de,
             }
 
-        elif input.solve_for() == "power":
-            d = input.effect_size()
-            n = input.n_per_arm()
-            z_beta = d * np.sqrt(n / de) - za
-            power_val = stats.norm.cdf(z_beta)
-            return {"type": "power", "power": power_val, "de": de}
+        # For the other two modes the user supplies a per-arm figure, so the
+        # equivalent total is what the formulas take.
+        n_tot = input.n_per_arm() / max(p, 1 - p)
 
-        else:  # mde
-            zb = stats.norm.ppf(input.power())
-            n = input.n_per_arm()
-            mde = (za + zb) * np.sqrt(de / n)
-            return {"type": "mde", "mde": mde, "de": de}
+        if input.solve_for() == "power":
+            return {
+                "type": "power",
+                "power": pw.power(input.effect_size(), n_tot, input.alpha(), **kw),
+                "de": de,
+            }
+
+        return {
+            "type": "mde",
+            "mde": pw.mde(n_tot, input.alpha(), input.power(), **kw),
+            "de": de,
+        }
 
     @output
     @render.ui
@@ -179,7 +175,7 @@ def server(input, output, session):
             return ui.div(
                 ui.h2(f"N = {r['n_total']:,}", style="color: #2c6fbb; margin-top:20px;"),
                 ui.p(f"Total sample size needed: {r['n_total']:,}"),
-                ui.p(f"Per arm: {r['n_per_arm']:,}"),
+                ui.p(f"Treatment: {r['n_treatment']:,}  |  Control: {r['n_control']:,}"),
                 ui.p(f"Design effect: {r['de']:.2f}") if r["de"] > 1 else None,
                 style="text-align:center; padding: 30px;",
             )
@@ -203,14 +199,15 @@ def server(input, output, session):
     @output
     @render.plot
     def power_curve():
+        two_sided = input.test_type() == "two_sided"
         fig, ax = plt.subplots(figsize=(8, 4))
         de = design_effect()
-        za = z_alpha()
 
         if input.solve_for() == "sample_size":
             d = input.effect_size()
             ns = np.arange(10, 2001, 10)
-            powers = [stats.norm.cdf(d * np.sqrt(n / de) - za) for n in ns]
+            powers = [pw.power(d, 2 * n, input.alpha(), p=0.5, de=de,
+                               two_sided=two_sided, n_arms=input.n_arms()) for n in ns]
             ax.plot(ns, powers, color="#2c6fbb", linewidth=2)
             ax.axhline(y=input.power(), color="#e74c3c", linestyle="--", alpha=0.7, label=f"Target power = {input.power()}")
             r = compute_result()
@@ -222,7 +219,8 @@ def server(input, output, session):
         elif input.solve_for() == "power":
             ds = np.linspace(0.01, 1.0, 200)
             n = input.n_per_arm()
-            powers = [stats.norm.cdf(d * np.sqrt(n / de) - za) for d in ds]
+            powers = [pw.power(d, 2 * n, input.alpha(), p=0.5, de=de,
+                               two_sided=two_sided, n_arms=input.n_arms()) for d in ds]
             ax.plot(ds, powers, color="#8e44ad", linewidth=2)
             ax.axvline(x=input.effect_size(), color="#e74c3c", linestyle="--", alpha=0.7, label=f"Your effect = {input.effect_size()}")
             ax.set_xlabel("Effect size (Cohen's d)")
@@ -231,8 +229,8 @@ def server(input, output, session):
 
         else:  # mde
             ns = np.arange(10, 2001, 10)
-            zb = stats.norm.ppf(input.power())
-            mdes = [(za + zb) * np.sqrt(de / n) for n in ns]
+            mdes = [pw.mde(2 * n, input.alpha(), input.power(), p=0.5, de=de,
+                           two_sided=two_sided, n_arms=input.n_arms()) for n in ns]
             ax.plot(ns, mdes, color="#8e44ad", linewidth=2)
             ax.axvline(x=input.n_per_arm(), color="#e74c3c", linestyle="--", alpha=0.7, label=f"Your n/arm = {input.n_per_arm()}")
             r = compute_result()
@@ -249,6 +247,7 @@ def server(input, output, session):
     @output
     @render.plot
     def sensitivity_plot():
+        two_sided = input.test_type() == "two_sided"
         fig, axes = plt.subplots(2, 2, figsize=(10, 8))
         de = design_effect()
 
@@ -256,8 +255,8 @@ def server(input, output, session):
         ax = axes[0, 0]
         ns = np.arange(20, 1501, 10)
         for d in [0.1, 0.2, 0.3, 0.5]:
-            za = z_alpha()
-            powers = [stats.norm.cdf(d * np.sqrt(n / de) - za) for n in ns]
+            powers = [pw.power(d, 2 * n, input.alpha(), p=0.5, de=de,
+                               two_sided=two_sided, n_arms=input.n_arms()) for n in ns]
             ax.plot(ns, powers, label=f"d = {d}", linewidth=1.5)
         ax.axhline(y=0.8, color="gray", linestyle=":", alpha=0.5)
         ax.set_xlabel("N per arm")
@@ -270,9 +269,8 @@ def server(input, output, session):
         ax = axes[0, 1]
         ns = np.arange(20, 1501, 10)
         for pwr in [0.7, 0.8, 0.9, 0.95]:
-            za = z_alpha()
-            zb = stats.norm.ppf(pwr)
-            mdes = [(za + zb) * np.sqrt(de / n) for n in ns]
+            mdes = [pw.mde(2 * n, input.alpha(), pwr, p=0.5, de=de,
+                           two_sided=two_sided, n_arms=input.n_arms()) for n in ns]
             ax.plot(ns, mdes, label=f"Power = {pwr}", linewidth=1.5)
         ax.set_xlabel("N per arm")
         ax.set_ylabel("MDE (SD)")
@@ -287,10 +285,11 @@ def server(input, output, session):
             d = input.effect_size() if input.solve_for() != "mde" else 0.2
             n = input.n_per_arm() if input.solve_for() != "sample_size" else 200
             m = input.cluster_size()
-            za = z_alpha()
             for m_val in [10, 20, 50, 100]:
-                des = [1 + (m_val - 1) * icc for icc in iccs]
-                powers = [stats.norm.cdf(d * np.sqrt(n / de_val) - za) for de_val in des]
+                des = [pw.design_effect(m_val, icc) for icc in iccs]
+                powers = [pw.power(d, 2 * n, input.alpha(), p=0.5, de=de_val,
+                                   two_sided=two_sided, n_arms=input.n_arms())
+                          for de_val in des]
                 ax.plot(iccs, powers, label=f"Cluster size = {m_val}", linewidth=1.5)
             ax.axhline(y=0.8, color="gray", linestyle=":", alpha=0.5)
             ax.set_xlabel("ICC")
@@ -300,9 +299,10 @@ def server(input, output, session):
         else:
             treat_shares = np.linspace(0.1, 0.9, 100)
             d = input.effect_size() if input.solve_for() != "mde" else 0.2
-            za = z_alpha()
             for n in [50, 100, 200, 500]:
-                powers = [stats.norm.cdf(d * np.sqrt(n * p * (1 - p) / de) - za) for p in treat_shares]
+                powers = [pw.power(d, n, input.alpha(), p=p_share, de=de,
+                                   two_sided=two_sided, n_arms=input.n_arms())
+                          for p_share in treat_shares]
                 ax.plot(treat_shares, powers, label=f"N total = {n}", linewidth=1.5)
             ax.axhline(y=0.8, color="gray", linestyle=":", alpha=0.5)
             ax.set_xlabel("Treatment share")
@@ -314,10 +314,10 @@ def server(input, output, session):
         # N required vs effect size for different power levels
         ax = axes[1, 1]
         ds = np.linspace(0.05, 0.8, 100)
-        za = z_alpha()
         for pwr in [0.7, 0.8, 0.9, 0.95]:
-            zb = stats.norm.ppf(pwr)
-            ns_required = [((za + zb) ** 2 / d**2) * de for d in ds]
+            ns_required = [pw.n_total(d, input.alpha(), pwr, p=0.5, de=de,
+                                      two_sided=two_sided, n_arms=input.n_arms()) / 2
+                           for d in ds]
             ax.plot(ds, ns_required, label=f"Power = {pwr}", linewidth=1.5)
         ax.set_xlabel("Effect size (d)")
         ax.set_ylabel("N per arm")
