@@ -4,6 +4,6 @@ shiny>=0.6.0
 numpy>=1.24
 scipy>=1.10
 pandas>=2.0
-matplotlib>=3.7
+matplotlib>=3.11.2
 statsmodels>=0.14
 pytest>=8.0
