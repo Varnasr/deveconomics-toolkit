@@ -6,4 +6,4 @@ scipy>=1.10
 pandas>=2.0
 matplotlib>=3.7
 statsmodels>=0.14
-pytest>=8.0
+pytest>=9.1.1
