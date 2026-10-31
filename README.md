@@ -229,3 +229,5 @@ MIT License — see [LICENSE](LICENSE) for details.
 ---
 
 Built with care for the global development community.
+
+Need help setting out your story, what sets your work apart, the context, the return on investment and the projections? Pinpoint Ventures can help. Write to [hello@pinpointventures.in](mailto:hello@pinpointventures.in?subject=Enquiry%20from%20github.com/Varnasr/deveconomics-toolkit) or message on [WhatsApp](https://wa.me/919871777110?text=Hi%20Pinpoint%20Ventures%2C%20I%20found%20you%20through%20github.com/Varnasr/deveconomics-toolkit.%20I%27d%20like%20to%20discuss%20a%20research%20or%20advisory%20engagement.).
